@@ -111,6 +111,13 @@ probes: {}
   #     path: /
   #     port: http
 
+pvc:
+  # name is 'test-base-template-pvc'
+  enabled: true
+  accessMode: ReadWriteOnce
+  storage: 5Gi
+  storageClass: standard
+
 volumes: []
   # - name: logging-config
   #   configMap:

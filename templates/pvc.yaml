@@ -1,0 +1,15 @@
+{{- if .Values.pvc.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "bss.fullname" . }}-pvc
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.pvc.accessMode | default "ReadWriteOnce" }}
+  resources:
+    requests:
+      storage: {{ .Values.pvc.storage | default "1Gi" }}
+  storageClassName: {{ .Values.pvc.storageClass | quote }}
+{{- end }}
