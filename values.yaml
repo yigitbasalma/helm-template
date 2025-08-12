@@ -112,8 +112,8 @@ probes: {}
   #     port: http
 
 pvc: {}
-  # name is 'test-base-template-pvc'
 #  enabled: true
+#  name: data
 #  accessMode: ReadWriteOnce
 #  storage: 5Gi
 #  storageClass: standard

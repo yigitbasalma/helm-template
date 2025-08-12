@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "bss.fullname" . }}-pvc
+  name: {{ .Values.pvc.name }}
   labels:
     {{- include "bss.labels" . | nindent 4 }}
 spec:
