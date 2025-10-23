@@ -156,3 +156,30 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+cronJobs: []
+#  - name: cleanup-temp
+#    schedule: "0 2 * * *"            # daily at 02:00
+#    image: "busybox:1.40"
+#    imagePullPolicy: IfNotPresent
+#    command: ["/bin/sh", "-c"]
+#    args:
+#      - "echo 'cleanup'; rm -rf /tmp/* || true"
+#    env:
+#      MY_ENV: "value"
+#      OTHER: "value2"
+#    serviceAccountName: "cron-sa"
+#    concurrencyPolicy: "Forbid"
+#    suspend: false
+#    startingDeadlineSeconds: 200
+#    successfulJobsHistoryLimit: 5
+#    failedJobsHistoryLimit: 2
+#    backoffLimit: 4
+#    restartPolicy: OnFailure
+#    resources:
+#      limits:
+#        cpu: "100m"
+#        memory: "128Mi"
+#      requests:
+#        cpu: "50m"
+#        memory: "64Mi"

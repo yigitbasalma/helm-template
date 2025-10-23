@@ -1,0 +1,85 @@
+{{- $root := . -}}
+{{- range $idx, $cj := .Values.cronJobs }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "fullname" $root }}-{{ $cj.name | default (printf "cron-%d" $idx) }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: {{ include "chart.name" $root }}
+    app.kubernetes.io/instance: {{ $root.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
+    helm.sh/chart: {{ include "chart.fullname" $root | default (printf "%s-%s" (include "chart.name" $root) $root.Chart.Version) }}
+    {{- with $cj.labels }}
+    {{ toYaml . }}
+    {{- end }}
+  {{- with $cj.annotations }}
+  annotations:
+    {{ toYaml . }}
+  {{- end }}
+spec:
+  schedule: {{ quote $cj.schedule }}
+  {{- if $cj.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ $cj.startingDeadlineSeconds }}
+  {{- end }}
+  concurrencyPolicy: {{ default "Forbid" $cj.concurrencyPolicy }}
+  suspend: {{ default false $cj.suspend | quote }}
+  successfulJobsHistoryLimit: {{ default 3 $cj.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ default 1 $cj.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ default 6 $cj.backoffLimit }}
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ include "chart.name" $root }}
+            app.kubernetes.io/instance: {{ $root.Release.Name }}
+            cronjob-name: {{ $cj.name | default (printf "cron-%d" $idx) }}
+        spec:
+          restartPolicy: {{ default "OnFailure" $cj.restartPolicy }}
+          {{- if $cj.serviceAccountName }}
+          serviceAccountName: {{ $cj.serviceAccountName }}
+          {{- end }}
+          containers:
+            - name: {{ $cj.name | default (printf "cron-%d" $idx) }}
+              image: {{ $cj.image }}
+              {{- if $cj.imagePullPolicy }}
+              imagePullPolicy: {{ $cj.imagePullPolicy }}
+              {{- end }}
+              {{- if $cj.command }}
+              command:
+                {{ toYaml $cj.command }}
+              {{- end }}
+              {{- if $cj.args }}
+              args:
+                {{ toYaml $cj.args }}
+              {{- end }}
+              {{- if $cj.env }}
+              env:
+                {{- if kindIs "map" $cj.env }}
+                {{- range $name, $val := $cj.env }}
+                - name: {{ $name }}
+                  value: {{ $val | quote }}
+                {{- end }}
+                {{- else }}
+                {{ toYaml $cj.env }}
+                {{- end }}
+              {{- end }}
+              {{- if $cj.resources }}
+              resources:
+                {{ toYaml $cj.resources }}
+              {{- end }}
+          {{- if $cj.nodeSelector }}
+          nodeSelector:
+            {{ toYaml $cj.nodeSelector }}
+          {{- end }}
+          {{- if $cj.tolerations }}
+          tolerations:
+            {{ toYaml $cj.tolerations }}
+          {{- end }}
+          {{- if $cj.affinity }}
+          affinity:
+            {{ toYaml $cj.affinity }}
+          {{- end }}
+---
+{{- end }}
