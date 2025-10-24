@@ -6,7 +6,7 @@ metadata:
   name: {{ include "bss.fullname" $root }}-{{ $cj.name | default (printf "cron-%d" $idx) }}
   namespace: {{ $root.Release.Namespace }}
   labels:
-    {{- include "bss.labels" . | nindent 4 }}
+    {{- include "bss.labels" $root | nindent 4 }}
     {{- with $cj.labels }}
     {{ toYaml . }}
     {{- end }}
