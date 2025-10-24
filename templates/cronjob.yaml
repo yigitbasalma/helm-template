@@ -29,7 +29,7 @@ spec:
       template:
         metadata:
           labels:
-            {{- include "bss.labels" $root | nindent 8 }}
+            {{- include "bss.labels" $root | nindent 12 }}
             cronjob-name: {{ $cj.name | default (printf "cron-%d" $idx) }}
         spec:
           restartPolicy: {{ default "OnFailure" $cj.restartPolicy }}
