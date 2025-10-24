@@ -20,7 +20,7 @@ spec:
   startingDeadlineSeconds: {{ $cj.startingDeadlineSeconds }}
   {{- end }}
   concurrencyPolicy: {{ default "Forbid" $cj.concurrencyPolicy }}
-  suspend: {{ default false $cj.suspend | quote }}
+  suspend: {{ default false $cj.suspend }}
   successfulJobsHistoryLimit: {{ default 3 $cj.successfulJobsHistoryLimit }}
   failedJobsHistoryLimit: {{ default 1 $cj.failedJobsHistoryLimit }}
   jobTemplate:
