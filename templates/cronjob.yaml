@@ -6,10 +6,7 @@ metadata:
   name: {{ include "bss.fullname" $root }}-{{ $cj.name | default (printf "cron-%d" $idx) }}
   namespace: {{ $root.Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "chart.name" $root }}
-    app.kubernetes.io/instance: {{ $root.Release.Name }}
-    app.kubernetes.io/managed-by: {{ $root.Release.Service }}
-    helm.sh/chart: {{ include "chart.fullname" $root | default (printf "%s-%s" (include "chart.name" $root) $root.Chart.Version) }}
+    {{- include "bss.labels" . | nindent 4 }}
     {{- with $cj.labels }}
     {{ toYaml . }}
     {{- end }}
