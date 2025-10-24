@@ -44,7 +44,7 @@ spec:
               {{- end }}
               {{- if $cj.command }}
               command:
-                {{ toYaml $cj.command }}
+                {{ toYaml $cj.command | nindent 16 }}
               {{- end }}
               {{- if $cj.args }}
               args:
