@@ -3,7 +3,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: {{ include "fullname" $root }}-{{ $cj.name | default (printf "cron-%d" $idx) }}
+  name: {{ include "bss.fullname" $root }}-{{ $cj.name | default (printf "cron-%d" $idx) }}
   namespace: {{ $root.Release.Namespace }}
   labels:
     app.kubernetes.io/name: {{ include "chart.name" $root }}
