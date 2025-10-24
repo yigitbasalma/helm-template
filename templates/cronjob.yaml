@@ -48,7 +48,7 @@ spec:
               {{- end }}
               {{- if $cj.args }}
               args:
-                {{ toYaml $cj.args }}
+                {{ toYaml $cj.args | nindent 16 }}
               {{- end }}
               {{- if $cj.env }}
               env:
@@ -58,24 +58,24 @@ spec:
                   value: {{ $val | quote }}
                 {{- end }}
                 {{- else }}
-                {{ toYaml $cj.env }}
+                {{ toYaml $cj.env | nindent 16 }}
                 {{- end }}
               {{- end }}
               {{- if $cj.resources }}
               resources:
-                {{ toYaml $cj.resources }}
+                {{ toYaml $cj.resources | nindent 16 }}
               {{- end }}
           {{- if $cj.nodeSelector }}
           nodeSelector:
-            {{ toYaml $cj.nodeSelector }}
+            {{ toYaml $cj.nodeSelector | nindent 14 }}
           {{- end }}
           {{- if $cj.tolerations }}
           tolerations:
-            {{ toYaml $cj.tolerations }}
+            {{ toYaml $cj.tolerations | nindent 14 }}
           {{- end }}
           {{- if $cj.affinity }}
           affinity:
-            {{ toYaml $cj.affinity }}
+            {{ toYaml $cj.affinity | nindent 14 }}
           {{- end }}
 ---
 {{- end }}
