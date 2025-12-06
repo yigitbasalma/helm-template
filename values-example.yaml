@@ -1,0 +1,86 @@
+# Example values demonstrating IngressRoute and Certificate usage
+
+replicaCount: 2
+
+image:
+  repository: myapp/api
+  pullPolicy: IfNotPresent
+  tag: "1.0.0"
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# HTTP/HTTPS IngressRoute with automatic certificate
+ingressRoute:
+  enabled: true
+  host: api.example.com
+  path: ""  # Optional: use "/api" for path-based routing
+  httpsRedirect: true  # Automatically redirect HTTP to HTTPS
+  certIssuer: letsencrypt  # Your cert-manager ClusterIssuer
+  certIssuerKind: ClusterIssuer
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  middlewares: []
+    # Add custom Traefik middlewares:
+    # - auth-middleware
+    # - rate-limit
+    # - cors-headers
+
+# TCP IngressRoute (for databases, custom protocols)
+ingressRouteTCP:
+  enabled: false
+  host: db.example.com
+  entryPoints:
+    - tcp  # Must match your Traefik TCP entrypoint
+  tls:
+    enabled: true
+    certIssuer: letsencrypt
+    certIssuerKind: ClusterIssuer
+    passthrough: false  # Set true for MongoDB/PostgreSQL with native TLS
+
+# Environment variables
+environments:
+  - name: APP_ENV
+    value: production
+  - name: LOG_LEVEL
+    value: info
+
+# ConfigMaps
+configMaps:
+  app-config.yaml: |
+    server:
+      port: 8080
+      timeout: 30s
+
+# Probes
+probes:
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8080
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8080
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Resources
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80

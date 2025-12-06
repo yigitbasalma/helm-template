@@ -183,3 +183,28 @@ cronJobs: []
 #      requests:
 #        cpu: "50m"
 #        memory: "64Mi"
+
+ingressRoute:
+  enabled: false
+  host: chart-example.local
+  path: ""  # Optional: PathPrefix for routing, e.g., "/api"
+  httpsRedirect: true  # Create HTTP to HTTPS redirect
+  certIssuer: letsencrypt  # cert-manager ClusterIssuer name
+  certIssuerKind: ClusterIssuer  # Can be ClusterIssuer or Issuer
+  annotations: {}
+    # traefik.ingress.kubernetes.io/router.tls: "true"
+  middlewares: []
+    # - name: auth-middleware
+    # - name: rate-limit
+
+ingressRouteTCP:
+  enabled: false
+  host: chart-example.local
+  entryPoints:
+    - tcp  # Traefik TCP entrypoint name
+  annotations: {}
+  tls:
+    enabled: false
+    certIssuer: letsencrypt
+    certIssuerKind: ClusterIssuer
+    passthrough: false  # Set to true for TLS passthrough (e.g., MongoDB with TLS)

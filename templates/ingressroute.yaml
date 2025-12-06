@@ -1,0 +1,92 @@
+{{- if .Values.ingressRoute.enabled -}}
+{{- $fullName := include "bss.fullname" . -}}
+{{- $svcPort := .Values.service.port -}}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $fullName }}-tls
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+  {{- with .Values.ingressRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  commonName: {{ .Values.ingressRoute.host }}
+  dnsNames:
+    - {{ .Values.ingressRoute.host }}
+  issuerRef:
+    kind: {{ .Values.ingressRoute.certIssuerKind | default "ClusterIssuer" }}
+    name: {{ .Values.ingressRoute.certIssuer }}
+  secretName: {{ $fullName }}-tls
+---
+{{- if .Values.ingressRoute.httpsRedirect }}
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ $fullName }}-redirect-https
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+spec:
+  redirectScheme:
+    scheme: https
+    port: "443"
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $fullName }}-http-redirect
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+  {{- with .Values.ingressRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    - web
+  routes:
+    - match: Host(`{{ .Values.ingressRoute.host }}`)
+      kind: Rule
+      middlewares:
+        - name: {{ $fullName }}-redirect-https
+      services:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+---
+{{- end }}
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+  {{- with .Values.ingressRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  entryPoints:
+    {{- if .Values.ingressRoute.httpsRedirect }}
+    - websecure
+    {{- else }}
+    - web
+    - websecure
+    {{- end }}
+  routes:
+  - match: Host(`{{ .Values.ingressRoute.host }}`){{- if .Values.ingressRoute.path }} && PathPrefix(`{{ .Values.ingressRoute.path }}`){{- end }}
+    kind: Rule
+    {{- if .Values.ingressRoute.middlewares }}
+    middlewares:
+      {{- range .Values.ingressRoute.middlewares }}
+      - name: {{ . }}
+      {{- end }}
+    {{- end }}
+    services:
+    - name: {{ $fullName }}
+      port: {{ $svcPort }}
+  tls:
+    secretName: {{ $fullName }}-tls
+{{- end }}
