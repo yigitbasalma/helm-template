@@ -49,6 +49,7 @@ environmentsFrom: []
   #  - secretRef:
   #      name: app-secret
 
+# Legacy single ConfigMap (deprecated, use configMaps below)
 configMaps: {}
   # logback.xml: |
   #   <configuration>
@@ -66,6 +67,100 @@ configMaps: {}
   #          <appender-ref ref="CONSOLE"/>
   #      </root>
   #   </configuration>
+
+# Multiple ConfigMaps support
+multipleConfigMaps: []
+  # - name: app-config
+  #   labels:
+  #     app.kubernetes.io/component: config
+  #   annotations:
+  #     description: "Application configuration files"
+  #   data:
+  #     application.properties: |
+  #       server.port=8080
+  #       spring.datasource.url=jdbc:mysql://localhost:3306/mydb
+  #       logging.level.com.myapp=DEBUG
+  #     database.properties: |
+  #       db.host=mysql-service
+  #       db.port=3306
+  #       db.name=production
+  #
+  # - name: logging-config
+  #   labels:
+  #     app.kubernetes.io/component: logging
+  #   data:
+  #     logback.xml: |
+  #       <configuration>
+  #         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+  #           <layout class="ch.qos.logback.classic.PatternLayout">
+  #             <Pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Pattern>
+  #           </layout>
+  #         </appender>
+  #         <root level="info">
+  #           <appender-ref ref="CONSOLE"/>
+  #         </root>
+  #       </configuration>
+  #     log4j2.xml: |
+  #       <?xml version="1.0" encoding="UTF-8"?>
+  #       <Configuration status="WARN">
+  #         <Appenders>
+  #           <Console name="Console" target="SYSTEM_OUT">
+  #             <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+  #           </Console>
+  #         </Appenders>
+  #         <Loggers>
+  #           <Root level="info">
+  #             <AppenderRef ref="Console"/>
+  #           </Root>
+  #         </Loggers>
+  #       </Configuration>
+  #
+  # - name: nginx-config
+  #   labels:
+  #     app.kubernetes.io/component: proxy
+  #   annotations:
+  #     nginx.org/config: "true"
+  #   data:
+  #     nginx.conf: |
+  #       events {
+  #         worker_connections 1024;
+  #       }
+  #       http {
+  #         upstream backend {
+  #           server backend-service:8080;
+  #         }
+  #         server {
+  #           listen 80;
+  #           location / {
+  #             proxy_pass http://backend;
+  #           }
+  #         }
+  #       }
+  #     mime.types: |
+  #       types {
+  #         text/html                             html htm shtml;
+  #         text/css                              css;
+  #         application/javascript                js;
+  #         application/json                      json;
+  #       }
+  #
+  # - name: scripts-config
+  #   labels:
+  #     app.kubernetes.io/component: scripts
+  #   data:
+  #     init.sh: |
+  #       #!/bin/bash
+  #       echo "Initializing application..."
+  #       mkdir -p /app/logs
+  #       chmod +x /app/bin/*
+  #     cleanup.sh: |
+  #       #!/bin/bash
+  #       echo "Cleaning up temporary files..."
+  #       find /tmp -name "*.tmp" -delete
+  #       echo "Cleanup completed"
+  #     healthcheck.sh: |
+  #       #!/bin/bash
+  #       curl -f http://localhost:8080/health || exit 1
 
 service:
   annotations: {}

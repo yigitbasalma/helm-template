@@ -46,12 +46,390 @@ environments:
   - name: LOG_LEVEL
     value: info
 
-# ConfigMaps
+# Legacy ConfigMaps (deprecated)
 configMaps:
   app-config.yaml: |
     server:
       port: 8080
       timeout: 30s
+
+# Multiple ConfigMaps (recommended)
+multipleConfigMaps:
+  - name: app-config
+    labels:
+      app.kubernetes.io/component: config
+      config-type: application
+    annotations:
+      description: "Main application configuration"
+      config.kubernetes.io/version: "1.0"
+    data:
+      application.properties: |
+        # Application Configuration
+        server.port=8080
+        server.servlet.context-path=/api
+        
+        # Database Configuration
+        spring.datasource.url=jdbc:postgresql://postgres:5432/myapp
+        spring.datasource.username=myapp
+        spring.datasource.driver-class-name=org.postgresql.Driver
+        
+        # Logging Configuration
+        logging.level.com.myapp=INFO
+        logging.level.org.springframework=WARN
+        logging.pattern.console=%d{yyyy-MM-dd HH:mm:ss} - %msg%n
+        
+        # Cache Configuration
+        spring.cache.type=redis
+        spring.redis.host=redis
+        spring.redis.port=6379
+      
+      database.properties: |
+        # Database Connection Pool
+        spring.datasource.hikari.maximum-pool-size=20
+        spring.datasource.hikari.minimum-idle=5
+        spring.datasource.hikari.connection-timeout=20000
+        spring.datasource.hikari.idle-timeout=300000
+        spring.datasource.hikari.max-lifetime=1200000
+      
+      application.yaml: |
+        server:
+          port: 8080
+          compression:
+            enabled: true
+            mime-types: text/html,text/xml,text/plain,text/css,application/json
+        
+        management:
+          endpoints:
+            web:
+              exposure:
+                include: health,info,metrics,prometheus
+          endpoint:
+            health:
+              show-details: always
+
+  - name: logging-config
+    labels:
+      app.kubernetes.io/component: logging
+      config-type: logging
+    annotations:
+      description: "Logging configuration files"
+    data:
+      logback-spring.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration>
+          <springProfile name="!prod">
+            <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+              <layout class="ch.qos.logback.classic.PatternLayout">
+                <Pattern>
+                  %d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n
+                </Pattern>
+              </layout>
+            </appender>
+            <root level="INFO">
+              <appender-ref ref="CONSOLE"/>
+            </root>
+          </springProfile>
+          
+          <springProfile name="prod">
+            <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+              <file>/app/logs/application.log</file>
+              <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>/app/logs/application.%d{yyyy-MM-dd}.log</fileNamePattern>
+                <maxHistory>30</maxHistory>
+              </rollingPolicy>
+              <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+              </encoder>
+            </appender>
+            <root level="WARN">
+              <appender-ref ref="FILE"/>
+            </root>
+          </springProfile>
+        </configuration>
+      
+      log4j2.xml: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <Configuration status="WARN">
+          <Appenders>
+            <Console name="Console" target="SYSTEM_OUT">
+              <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            </Console>
+            <RollingFile name="RollingFile" fileName="/app/logs/app.log"
+                         filePattern="/app/logs/app-%d{MM-dd-yy}.log.gz">
+              <PatternLayout>
+                <Pattern>%d %p %c{1.} [%t] %m%n</Pattern>
+              </PatternLayout>
+              <Policies>
+                <TimeBasedTriggeringPolicy />
+              </Policies>
+            </RollingFile>
+          </Appenders>
+          <Loggers>
+            <Logger name="com.myapp" level="debug" additivity="false">
+              <AppenderRef ref="Console"/>
+              <AppenderRef ref="RollingFile"/>
+            </Logger>
+            <Root level="error">
+              <AppenderRef ref="Console"/>
+            </Root>
+          </Loggers>
+        </Configuration>
+
+  - name: nginx-config
+    labels:
+      app.kubernetes.io/component: proxy
+      config-type: nginx
+    annotations:
+      description: "Nginx reverse proxy configuration"
+      nginx.org/config: "true"
+    data:
+      nginx.conf: |
+        events {
+          worker_connections 1024;
+        }
+        
+        http {
+          include       /etc/nginx/mime.types;
+          default_type  application/octet-stream;
+          
+          log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                         '$status $body_bytes_sent "$http_referer" '
+                         '"$http_user_agent" "$http_x_forwarded_for"';
+          
+          access_log /var/log/nginx/access.log main;
+          error_log /var/log/nginx/error.log warn;
+          
+          sendfile on;
+          tcp_nopush on;
+          tcp_nodelay on;
+          keepalive_timeout 65;
+          types_hash_max_size 2048;
+          
+          gzip on;
+          gzip_vary on;
+          gzip_min_length 10240;
+          gzip_proxied expired no-cache no-store private must-revalidate;
+          gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;
+          
+          upstream backend {
+            server backend-service:8080 max_fails=3 fail_timeout=30s;
+            server backend-service-2:8080 max_fails=3 fail_timeout=30s backup;
+          }
+          
+          server {
+            listen 80;
+            server_name _;
+            
+            location /health {
+              access_log off;
+              return 200 "healthy\n";
+              add_header Content-Type text/plain;
+            }
+            
+            location / {
+              proxy_pass http://backend;
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+              
+              proxy_connect_timeout 30s;
+              proxy_send_timeout 30s;
+              proxy_read_timeout 30s;
+            }
+          }
+        }
+      
+      mime.types: |
+        types {
+          text/html                             html htm shtml;
+          text/css                              css;
+          text/xml                              xml;
+          image/gif                             gif;
+          image/jpeg                            jpeg jpg;
+          image/png                             png;
+          image/svg+xml                         svg svgz;
+          image/webp                            webp;
+          application/javascript                js;
+          application/json                      json;
+          application/xml                       xml;
+          application/pdf                       pdf;
+          application/zip                       zip;
+        }
+
+  - name: scripts-config
+    labels:
+      app.kubernetes.io/component: scripts
+      config-type: scripts
+    annotations:
+      description: "Application startup and utility scripts"
+    data:
+      init.sh: |
+        #!/bin/bash
+        set -e
+        
+        echo "Initializing application..."
+        
+        # Create necessary directories
+        mkdir -p /app/logs
+        mkdir -p /app/temp
+        mkdir -p /app/data
+        
+        # Set permissions
+        chmod +x /app/bin/*
+        chmod 755 /app/logs
+        
+        # Wait for database
+        echo "Waiting for database connection..."
+        until nc -z postgres 5432; do
+          echo "Database not ready, waiting..."
+          sleep 2
+        done
+        echo "Database is ready!"
+        
+        # Wait for Redis
+        echo "Waiting for Redis connection..."
+        until nc -z redis 6379; do
+          echo "Redis not ready, waiting..."
+          sleep 2
+        done
+        echo "Redis is ready!"
+        
+        echo "Initialization completed successfully"
+      
+      healthcheck.sh: |
+        #!/bin/bash
+        
+        # Health check script
+        HEALTH_URL="http://localhost:8080/actuator/health"
+        
+        # Check if application is responding
+        if curl -f -s "$HEALTH_URL" > /dev/null; then
+          echo "Application is healthy"
+          exit 0
+        else
+          echo "Application health check failed"
+          exit 1
+        fi
+      
+      cleanup.sh: |
+        #!/bin/bash
+        
+        echo "Starting cleanup process..."
+        
+        # Clean temporary files older than 1 day
+        find /app/temp -type f -mtime +1 -delete 2>/dev/null || true
+        
+        # Clean log files older than 7 days
+        find /app/logs -name "*.log" -mtime +7 -delete 2>/dev/null || true
+        
+        # Clean cache files
+        rm -rf /app/cache/* 2>/dev/null || true
+        
+        echo "Cleanup completed"
+      
+      backup.sh: |
+        #!/bin/bash
+        
+        BACKUP_DIR="/app/backups"
+        DATE=$(date +%Y%m%d_%H%M%S)
+        
+        echo "Starting backup process..."
+        
+        # Create backup directory
+        mkdir -p "$BACKUP_DIR"
+        
+        # Backup application data
+        if [ -d "/app/data" ]; then
+          tar -czf "$BACKUP_DIR/data_backup_$DATE.tar.gz" -C /app data/
+          echo "Data backup created: data_backup_$DATE.tar.gz"
+        fi
+        
+        # Backup configuration
+        if [ -d "/app/config" ]; then
+          tar -czf "$BACKUP_DIR/config_backup_$DATE.tar.gz" -C /app config/
+          echo "Config backup created: config_backup_$DATE.tar.gz"
+        fi
+        
+        # Clean old backups (keep last 5)
+        ls -t "$BACKUP_DIR"/*.tar.gz | tail -n +6 | xargs -r rm
+        
+        echo "Backup process completed"
+
+  - name: monitoring-config
+    labels:
+      app.kubernetes.io/component: monitoring
+      config-type: monitoring
+    annotations:
+      description: "Monitoring and metrics configuration"
+    data:
+      prometheus.yml: |
+        global:
+          scrape_interval: 15s
+          evaluation_interval: 15s
+        
+        scrape_configs:
+          - job_name: 'application'
+            static_configs:
+              - targets: ['localhost:8080']
+            metrics_path: '/actuator/prometheus'
+            scrape_interval: 10s
+        
+          - job_name: 'jvm'
+            static_configs:
+              - targets: ['localhost:8080']
+            metrics_path: '/actuator/metrics'
+            scrape_interval: 30s
+      
+      grafana-dashboard.json: |
+        {
+          "dashboard": {
+            "id": null,
+            "title": "Application Metrics",
+            "tags": ["application", "spring-boot"],
+            "timezone": "browser",
+            "panels": [
+              {
+                "id": 1,
+                "title": "HTTP Requests",
+                "type": "graph",
+                "targets": [
+                  {
+                    "expr": "rate(http_requests_total[5m])",
+                    "legendFormat": "{{method}} {{status}}"
+                  }
+                ]
+              }
+            ],
+            "time": {
+              "from": "now-1h",
+              "to": "now"
+            },
+            "refresh": "5s"
+          }
+        }
+      
+      alerts.yml: |
+        groups:
+          - name: application.rules
+            rules:
+              - alert: ApplicationDown
+                expr: up{job="application"} == 0
+                for: 1m
+                labels:
+                  severity: critical
+                annotations:
+                  summary: "Application is down"
+                  description: "Application has been down for more than 1 minute"
+              
+              - alert: HighErrorRate
+                expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+                for: 2m
+                labels:
+                  severity: warning
+                annotations:
+                  summary: "High error rate detected"
+                  description: "Error rate is {{ $value }} errors per second"
 
 # Probes
 probes:

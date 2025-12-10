@@ -1,3 +1,7 @@
+{{- if .Values.configMaps }}
+{{- if gt (len .Values.configMaps) 0 }}
+---
+# Legacy single ConfigMap (deprecated)
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,3 +10,24 @@ metadata:
     {{- include "bss.labels" . | nindent 4 }}
 data:
   {{- toYaml .Values.configMaps | nindent 2 }}
+{{- end }}
+{{- end }}
+
+{{- range .Values.multipleConfigMaps }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "bss.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "bss.labels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+data:
+  {{- toYaml .data | nindent 2 }}
+{{- end }}
