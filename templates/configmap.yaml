@@ -18,7 +18,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "bss.fullname" $ }}-{{ .name }}
+  name: {{ .name }}
   labels:
     {{- include "bss.labels" $ | nindent 4 }}
     {{- with .labels }}
