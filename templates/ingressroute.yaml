@@ -40,10 +40,6 @@ metadata:
   name: {{ $fullName }}-http-redirect
   labels:
     {{- include "bss.labels" . | nindent 4 }}
-  {{- with .Values.ingressRoute.annotations }}
-  annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
 spec:
   entryPoints:
     - web
