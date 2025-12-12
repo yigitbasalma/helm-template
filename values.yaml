@@ -252,6 +252,8 @@ tolerations: []
 
 affinity: {}
 
+command: []
+
 cronJobs: []
 #  - name: cleanup-temp
 #    schedule: "0 2 * * *"            # daily at 02:00
