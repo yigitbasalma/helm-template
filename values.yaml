@@ -2,6 +2,12 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Global values that can be shared across multiple charts
+global:
+  image:
+    # Global image tag override - if set, this will be used instead of image.tag
+    tag: ""
+
 replicaCount: 1
 
 image:

@@ -31,7 +31,7 @@ spec:
         - name: {{ include "bss.fullname" . }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          image: "{{ .Values.image.repository }}:{{ coalesce ((.Values.global).image).tag .Values.image.tag .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.command }}
           command:
