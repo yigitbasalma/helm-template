@@ -1,0 +1,128 @@
+# Service Configuration Examples
+
+# Example 1: Single Service (Original Format)
+# This maintains backward compatibility
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+  annotations:
+    prometheus.io/scrape: "true"
+  labels:
+    component: web
+
+---
+# Example 2: Single Service with Multiple Ports
+service:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 8443
+      protocol: TCP
+      name: https
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+---
+# Example 3: Multiple Services (List Format)
+service:
+  - name: web
+    type: ClusterIP
+    port: 80
+    targetPort: 8080
+    annotations:
+      prometheus.io/scrape: "true"
+    labels:
+      component: web
+  
+  - name: api
+    type: ClusterIP
+    ports:
+      - port: 8080
+        targetPort: 8080
+        protocol: TCP
+        name: http
+      - port: 9090
+        targetPort: 9090
+        protocol: TCP
+        name: metrics
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "9090"
+    labels:
+      component: api
+  
+  - name: admin
+    type: NodePort
+    port: 8081
+    targetPort: 8081
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    labels:
+      component: admin
+
+---
+# Example 4: LoadBalancer Service with NodePort
+service:
+  - name: external
+    type: LoadBalancer
+    ports:
+      - port: 80
+        targetPort: 8080
+        protocol: TCP
+        name: http
+        nodePort: 30080
+      - port: 443
+        targetPort: 8443
+        protocol: TCP
+        name: https
+        nodePort: 30443
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+
+---
+# Example 5: Service with Custom Selector
+service:
+  - name: database
+    type: ClusterIP
+    port: 5432
+    targetPort: 5432
+    selector:
+      app: postgresql
+      tier: database
+    labels:
+      component: database
+
+---
+# Example 6: Headless Service
+service:
+  - name: headless
+    type: ClusterIP
+    clusterIP: None
+    port: 80
+    targetPort: 8080
+    labels:
+      component: discovery
+
+---
+# Example 7: Mixed Configuration (Single + Multiple)
+# Note: This would be in separate charts, not the same values file
+service:
+  type: ClusterIP
+  port: 80
+  # This creates one service with default name
+
+# OR (not both in same file)
+
+service:
+  - name: primary
+    type: ClusterIP
+    port: 80
+  - name: secondary
+    type: NodePort
+    port: 8080

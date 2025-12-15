@@ -169,10 +169,53 @@ multipleConfigMaps: []
   #       curl -f http://localhost:8080/health || exit 1
 
 service:
-  annotations: {}
-    # prometheus.io/scrape: "true"
+  # Single service configuration (backward compatible)
   type: ClusterIP
   port: 80
+  targetPort: http
+  annotations: {}
+    # prometheus.io/scrape: "true"
+  labels: {}
+    # component: web
+  
+  # Alternative: Multiple ports for single service
+  # ports:
+  #   - port: 80
+  #     targetPort: 8080
+  #     protocol: TCP
+  #     name: http
+  #   - port: 443
+  #     targetPort: 8443
+  #     protocol: TCP
+  #     name: https
+  
+  # Alternative: Multiple services (list format)
+  # Uncomment and modify the list below to create multiple services
+  # - name: web
+  #   type: ClusterIP
+  #   port: 80
+  #   targetPort: 8080
+  #   annotations:
+  #     prometheus.io/scrape: "true"
+  #   labels:
+  #     component: web
+  # 
+  # - name: api
+  #   type: ClusterIP
+  #   ports:
+  #     - port: 8080
+  #       targetPort: 8080
+  #       protocol: TCP
+  #       name: http
+  #     - port: 9090
+  #       targetPort: 9090
+  #       protocol: TCP
+  #       name: metrics
+  #   annotations:
+  #     prometheus.io/scrape: "true"
+  #     prometheus.io/port: "9090"
+  #   labels:
+  #     component: api
 
 ingress:
   enabled: false
