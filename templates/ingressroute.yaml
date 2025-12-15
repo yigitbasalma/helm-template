@@ -1,6 +1,26 @@
 {{- if .Values.ingressRoute.enabled -}}
 {{- $fullName := include "bss.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $svcPort := "" -}}
+{{- $svcName := $fullName -}}
+{{- if kindIs "slice" .Values.service -}}
+  {{- $firstService := index .Values.service 0 -}}
+  {{- if $firstService.name -}}
+    {{- $svcName = printf "%s-%s" $fullName $firstService.name -}}
+  {{- else -}}
+    {{- $svcName = printf "%s-0" $fullName -}}
+  {{- end -}}
+  {{- if $firstService.ports -}}
+    {{- $svcPort = (index $firstService.ports 0).port -}}
+  {{- else -}}
+    {{- $svcPort = $firstService.port | default 80 -}}
+  {{- end -}}
+{{- else -}}
+  {{- if .Values.service.ports -}}
+    {{- $svcPort = (index .Values.service.ports 0).port -}}
+  {{- else -}}
+    {{- $svcPort = .Values.service.port | default 80 -}}
+  {{- end -}}
+{{- end -}}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate
@@ -49,7 +69,7 @@ spec:
       middlewares:
         - name: {{ $fullName }}-redirect-https
       services:
-        - name: {{ $fullName }}
+        - name: {{ $svcName }}
           port: {{ $svcPort }}
 ---
 {{- end }}
@@ -81,7 +101,7 @@ spec:
       {{- end }}
     {{- end }}
     services:
-    - name: {{ $fullName }}
+    - name: {{ $svcName }}
       port: {{ $svcPort }}
   tls:
     secretName: {{ $fullName }}-tls

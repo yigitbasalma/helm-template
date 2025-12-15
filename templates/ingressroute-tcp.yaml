@@ -1,6 +1,22 @@
 {{- if .Values.ingressRouteTCP.enabled -}}
 {{- $fullName := include "bss.fullname" . -}}
-{{- $svcPort := .Values.service.port -}}
+{{- $svcPort := "" -}}
+{{- $svcName := $fullName -}}
+{{- if kindIs "slice" .Values.service -}}
+  {{- $firstService := index .Values.service 0 -}}
+  {{- $svcName = printf "%s-%s" $fullName ($firstService.name | default "service") -}}
+  {{- if kindIs "slice" $firstService.port -}}
+    {{- $svcPort = index $firstService.port 0 -}}
+  {{- else -}}
+    {{- $svcPort = $firstService.port -}}
+  {{- end -}}
+{{- else -}}
+  {{- if kindIs "slice" .Values.service.port -}}
+    {{- $svcPort = index .Values.service.port 0 -}}
+  {{- else -}}
+    {{- $svcPort = .Values.service.port -}}
+  {{- end -}}
+{{- end -}}
 ---
 {{- if .Values.ingressRouteTCP.tls.enabled }}
 apiVersion: cert-manager.io/v1
@@ -37,7 +53,7 @@ spec:
   routes:
   - match: HostSNI(`{{ .Values.ingressRouteTCP.host }}`)
     services:
-    - name: {{ $fullName }}
+    - name: {{ $svcName }}
       port: {{ $svcPort }}
   {{- if .Values.ingressRouteTCP.tls.enabled }}
   tls:

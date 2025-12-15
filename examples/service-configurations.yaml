@@ -126,3 +126,26 @@ service:
   - name: secondary
     type: NodePort
     port: 8080
+
+---
+# IMPORTANT: Ingress Template Behavior with Multiple Services
+
+# When using multiple services, the ingress/ingressroute/ingressroute-tcp templates will:
+# 1. Use the FIRST service in the list
+# 2. Use the FIRST port of that service (if multiple ports exist)
+# 3. Generate service name as: {{ fullname }}-{{ service.name }}
+
+# Example: If your release is "myapp" and you have:
+service:
+  - name: web
+    port: [8080, 8443]  # First service, first port = 8080
+  - name: api
+    port: 3000
+
+# The ingress templates will use:
+# - Service name: myapp-web
+# - Port: 8080
+
+# This ensures consistent behavior across all ingress-related templates.
+# If you need different services for different ingress types, consider
+# using separate Helm releases or custom ingress configurations.

@@ -1,0 +1,81 @@
+# Complete example showing multiple services with ingress, ingressroute, and ingressroute-tcp
+# This demonstrates how all templates handle multiple services and ports
+
+# Multiple services configuration
+service:
+  - name: web
+    type: ClusterIP
+    port: [8080, 8443]  # Multiple ports
+    targetPort: [http, https]
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: nlb
+    labels:
+      tier: frontend
+  - name: api
+    type: ClusterIP
+    port: 3000  # Single port
+    targetPort: api
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+    labels:
+      tier: backend
+
+# Ingress configuration (uses first service's first port: web:8080)
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: myapp.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: myapp-tls
+      hosts:
+        - myapp.example.com
+
+# IngressRoute configuration (uses first service's first port: web:8080)
+ingressRoute:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.middlewares: default-auth@kubernetescrd
+  host: myapp-traefik.example.com
+  paths:
+    - path: /
+      service: web  # Optional: specify which service to use
+  tls:
+    enabled: true
+    certIssuer: letsencrypt-prod
+    certIssuerKind: ClusterIssuer
+
+# IngressRouteTCP configuration (uses first service's first port: web:8080)
+ingressRouteTCP:
+  enabled: true
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls.options: default@kubernetescrd
+  host: myapp-tcp.example.com
+  entryPoints:
+    - websecure
+    - web
+  tls:
+    enabled: true
+    certIssuer: letsencrypt-prod
+    certIssuerKind: ClusterIssuer
+    passthrough: false
+
+# Single service configuration (backward compatibility)
+# service:
+#   type: ClusterIP
+#   port: 8080
+#   targetPort: http
+#   annotations:
+#     service.beta.kubernetes.io/aws-load-balancer-type: nlb
+
+# Single service with multiple ports (backward compatibility)
+# service:
+#   type: ClusterIP
+#   port: [8080, 8443, 9090]
+#   targetPort: [http, https, metrics]
