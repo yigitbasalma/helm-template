@@ -481,3 +481,17 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
+
+# Affinity
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - frontend-service
+          topologyKey: kubernetes.io/hostname

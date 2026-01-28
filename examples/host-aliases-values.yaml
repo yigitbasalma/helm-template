@@ -1,0 +1,181 @@
+# Example: Using hostAliases to add custom /etc/hosts entries
+#
+# This is useful when you need to:
+# - Override DNS resolution for specific hostnames
+# - Add custom hostname mappings for legacy systems
+# - Point to internal services not in DNS
+# - Test with specific IP addresses
+
+# Basic example - single host alias
+hostAliases:
+  - ip: "192.168.1.100"
+    hostnames:
+      - "database.example.com"
+
+---
+# Example: Multiple host aliases for different services
+hostAliases:
+  # Database servers
+  - ip: "10.0.1.10"
+    hostnames:
+      - "db-master.internal"
+      - "mysql.internal"
+      - "postgres.internal"
+  
+  # Cache servers
+  - ip: "10.0.2.20"
+    hostnames:
+      - "redis.internal"
+      - "cache.internal"
+  
+  # API endpoints
+  - ip: "10.0.3.30"
+    hostnames:
+      - "api.legacy.com"
+      - "old-api.example.com"
+  
+  # External services
+  - ip: "203.0.113.50"
+    hostnames:
+      - "partner-api.external.com"
+
+---
+# Example: Development environment with local services
+hostAliases:
+  # Point production hostnames to local development services
+  - ip: "127.0.0.1"
+    hostnames:
+      - "localhost.local"
+      - "dev.local"
+  
+  # Local Kubernetes services (for testing)
+  - ip: "10.96.0.10"
+    hostnames:
+      - "kubernetes.default.svc.cluster.local"
+  
+  # Mock external services
+  - ip: "192.168.1.50"
+    hostnames:
+      - "mock-payment-gateway.local"
+      - "mock-auth-service.local"
+
+---
+# Example: Multi-region setup with region-specific endpoints
+hostAliases:
+  # US region
+  - ip: "10.1.0.100"
+    hostnames:
+      - "db-us-east.internal"
+      - "cache-us-east.internal"
+  
+  # EU region
+  - ip: "10.2.0.100"
+    hostnames:
+      - "db-eu-west.internal"
+      - "cache-eu-west.internal"
+  
+  # Asia region
+  - ip: "10.3.0.100"
+    hostnames:
+      - "db-asia-south.internal"
+      - "cache-asia-south.internal"
+
+---
+# Example: Testing with specific IP addresses
+hostAliases:
+  # Override production DNS for testing
+  - ip: "192.168.100.10"
+    hostnames:
+      - "api.production.com"
+      - "www.production.com"
+  
+  # Point to staging environment
+  - ip: "192.168.100.20"
+    hostnames:
+      - "staging-db.company.com"
+      - "staging-cache.company.com"
+
+---
+# Example: Legacy system integration
+hostAliases:
+  # Old mainframe system
+  - ip: "172.16.0.50"
+    hostnames:
+      - "mainframe.legacy.local"
+      - "cobol-api.legacy.local"
+  
+  # Legacy database
+  - ip: "172.16.0.51"
+    hostnames:
+      - "oracle-db.legacy.local"
+      - "legacy-db.company.com"
+  
+  # Legacy file server
+  - ip: "172.16.0.52"
+    hostnames:
+      - "fileserver.legacy.local"
+      - "nfs.legacy.local"
+
+---
+# Complete deployment example with hostAliases
+replicaCount: 2
+
+image:
+  repository: myapp/backend
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+# Add custom host entries
+hostAliases:
+  - ip: "10.0.1.100"
+    hostnames:
+      - "database.internal"
+      - "db.internal"
+  - ip: "10.0.2.100"
+    hostnames:
+      - "redis.internal"
+      - "cache.internal"
+
+environments:
+  - name: DATABASE_HOST
+    value: "database.internal"  # Will resolve to 10.0.1.100
+  - name: CACHE_HOST
+    value: "redis.internal"     # Will resolve to 10.0.2.100
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+---
+# Notes:
+# 
+# 1. hostAliases adds entries to /etc/hosts in the pod
+# 2. These entries take precedence over DNS resolution
+# 3. Useful for:
+#    - Overriding DNS for testing
+#    - Accessing services not in DNS
+#    - Legacy system integration
+#    - Development environments
+# 
+# 4. The /etc/hosts file in the pod will look like:
+#    # Kubernetes-managed hosts file.
+#    127.0.0.1       localhost
+#    ::1             localhost ip6-localhost ip6-loopback
+#    
+#    # Entries added by HostAliases.
+#    10.0.1.100      database.internal db.internal
+#    10.0.2.100      redis.internal cache.internal
+# 
+# 5. Best practices:
+#    - Use for temporary overrides or testing
+#    - Document why each alias is needed
+#    - Consider using Kubernetes Services instead when possible
+#    - Be careful with IP changes - hostAliases are static

@@ -12,6 +12,8 @@ A comprehensive Helm template for Kubernetes applications with support for multi
 - ✅ **Probes** - Liveness and readiness probes
 - ✅ **PVC Support** - Persistent volume claims
 - ✅ **Service Account** - Custom service accounts with annotations
+- ✅ **Host Aliases** - Custom /etc/hosts entries for pods
+- ✅ **Pod Anti-Affinity** - Spread replicas across nodes/zones
 
 ## Quick Start
 
@@ -101,6 +103,30 @@ environmentsFrom:
   - secretRef:
       name: app-secrets
 ```
+
+### Host Aliases
+
+Add custom /etc/hosts entries to pods:
+
+```yaml
+hostAliases:
+  - ip: "10.0.1.100"
+    hostnames:
+      - "database.internal"
+      - "db.internal"
+  - ip: "10.0.2.100"
+    hostnames:
+      - "redis.internal"
+      - "cache.internal"
+```
+
+This is useful for:
+- Overriding DNS resolution for specific hostnames
+- Accessing legacy systems not in DNS
+- Testing with specific IP addresses
+- Development environments
+
+See [examples/host-aliases-values.yaml](examples/host-aliases-values.yaml) for more examples.
 
 ### Probes
 
@@ -220,6 +246,27 @@ volumeMounts:
     mountPath: /etc/nginx/nginx.conf
     subPath: nginx.conf
 ```
+
+### High Availability with Pod Anti-Affinity
+
+For applications requiring high availability, use pod anti-affinity to spread replicas across different hosts:
+
+```yaml
+replicaCount: 3
+
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - "{{ include \"base-template.name\" . }}"
+        topologyKey: kubernetes.io/hostname
+```
+
+See [examples/pod-anti-affinity-values.yaml](examples/pod-anti-affinity-values.yaml) for complete configuration examples and [examples/README.md](examples/README.md) for detailed explanations.
 
 ## Migration Guide
 

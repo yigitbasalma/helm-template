@@ -299,7 +299,85 @@ nodeSelector: {}
 
 tolerations: []
 
+# Host aliases - add custom /etc/hosts entries to pods
+hostAliases: []
+  # - ip: "192.168.1.100"
+  #   hostnames:
+  #     - "db.example.com"
+  #     - "database.local"
+  # - ip: "10.0.0.50"
+  #   hostnames:
+  #     - "api.internal"
+  #     - "cache.internal"
+
+# Pod affinity/anti-affinity configuration
+# Use this to control pod placement across nodes
 affinity: {}
+  # Example 1: Required pod anti-affinity - spread replicas across different hosts
+  # This ensures each replica runs on a different node (hard requirement)
+  # podAntiAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchExpressions:
+  #           - key: app.kubernetes.io/name
+  #             operator: In
+  #             values:
+  #               - {{ include "base-template.name" . }}
+  #       topologyKey: kubernetes.io/hostname
+  #
+  # Example 2: Preferred pod anti-affinity - try to spread replicas (soft requirement)
+  # This attempts to spread replicas but allows scheduling on same node if needed
+  # podAntiAffinity:
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 100
+  #       podAffinityTerm:
+  #         labelSelector:
+  #           matchExpressions:
+  #             - key: app.kubernetes.io/name
+  #               operator: In
+  #               values:
+  #                 - {{ include "base-template.name" . }}
+  #         topologyKey: kubernetes.io/hostname
+  #
+  # Example 3: Spread across availability zones (required)
+  # podAntiAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchLabels:
+  #           app.kubernetes.io/name: {{ include "base-template.name" . }}
+  #       topologyKey: topology.kubernetes.io/zone
+  #
+  # Example 4: Combined - spread across zones (required) and hosts (preferred)
+  # podAntiAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     - labelSelector:
+  #         matchLabels:
+  #           app.kubernetes.io/name: {{ include "base-template.name" . }}
+  #       topologyKey: topology.kubernetes.io/zone
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 100
+  #       podAffinityTerm:
+  #         labelSelector:
+  #           matchLabels:
+  #             app.kubernetes.io/name: {{ include "base-template.name" . }}
+  #         topologyKey: kubernetes.io/hostname
+  #
+  # Example 5: Node affinity - schedule on specific nodes
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #           - key: node-role.kubernetes.io/worker
+  #             operator: Exists
+  #   preferredDuringSchedulingIgnoredDuringExecution:
+  #     - weight: 1
+  #       preference:
+  #         matchExpressions:
+  #           - key: node.kubernetes.io/instance-type
+  #             operator: In
+  #             values:
+  #               - m5.large
+  #               - m5.xlarge
 
 command: []
 

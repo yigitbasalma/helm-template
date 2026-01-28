@@ -1,0 +1,68 @@
+# Example values.yaml for pod anti-affinity configuration
+# This example shows how to spread replicas across different hosts
+
+# Set replica count to demonstrate anti-affinity
+replicaCount: 3
+
+# Pod anti-affinity configuration to spread replicas across different hosts
+affinity:
+  # Required pod anti-affinity - hard requirement to spread replicas
+  # This ensures each replica runs on a different node
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - "{{ include \"base-template.name\" . }}"
+        topologyKey: kubernetes.io/hostname
+
+# Alternative: Preferred pod anti-affinity (soft requirement)
+# Uncomment this section and comment the above if you want soft anti-affinity
+# affinity:
+#   podAntiAffinity:
+#     preferredDuringSchedulingIgnoredDuringExecution:
+#       - weight: 100
+#         podAffinityTerm:
+#           labelSelector:
+#             matchExpressions:
+#               - key: app.kubernetes.io/name
+#                 operator: In
+#                 values:
+#                   - "{{ include \"base-template.name\" . }}"
+#           topologyKey: kubernetes.io/hostname
+
+# Alternative: Combined zone and host anti-affinity
+# This spreads replicas across zones (required) and hosts (preferred)
+# affinity:
+#   podAntiAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       - labelSelector:
+#           matchLabels:
+#             app.kubernetes.io/name: "{{ include \"base-template.name\" . }}"
+#         topologyKey: topology.kubernetes.io/zone
+#     preferredDuringSchedulingIgnoredDuringExecution:
+#       - weight: 100
+#         podAffinityTerm:
+#           labelSelector:
+#             matchLabels:
+#               app.kubernetes.io/name: "{{ include \"base-template.name\" . }}"
+#           topologyKey: kubernetes.io/hostname
+
+# Other configuration (customize as needed)
+image:
+  repository: nginx
+  tag: "1.21"
+
+service:
+  type: ClusterIP
+  port: 80
+
+resources:
+  requests:
+    memory: "64Mi"
+    cpu: "50m"
+  limits:
+    memory: "128Mi"
+    cpu: "100m"
