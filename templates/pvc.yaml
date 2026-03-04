@@ -1,4 +1,6 @@
 {{- if .Values.pvc.enabled }}
+---
+# Legacy single PVC (deprecated)
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,4 +14,42 @@ spec:
     requests:
       storage: {{ .Values.pvc.storage | default "1Gi" }}
   storageClassName: {{ .Values.pvc.storageClass | quote }}
+{{- end }}
+
+{{- range .Values.multiplePVCs }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .name }}
+  labels:
+    {{- include "bss.labels" $ | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .accessModes }}
+    - {{ . }}
+    {{- end }}
+  resources:
+    requests:
+      storage: {{ .storage }}
+  {{- with .storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  {{- with .selector }}
+  selector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .volumeName }}
+  volumeName: {{ . }}
+  {{- end }}
+  {{- with .volumeMode }}
+  volumeMode: {{ . }}
+  {{- end }}
 {{- end }}

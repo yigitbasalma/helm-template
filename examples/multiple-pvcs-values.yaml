@@ -1,0 +1,162 @@
+# Example: Multiple PVCs Configuration
+# This example demonstrates various PVC configurations for different use cases
+
+# Basic application with multiple storage needs
+multiplePVCs:
+  # Application data storage - fast SSD for performance
+  - name: app-data
+    labels:
+      app.kubernetes.io/component: storage
+      tier: application
+    annotations:
+      description: "Primary application data storage"
+      backup: "true"
+    accessModes:
+      - ReadWriteOnce
+    storage: 10Gi
+    storageClassName: fast-ssd
+
+  # Logs storage - standard storage for cost efficiency
+  - name: logs-storage
+    labels:
+      app.kubernetes.io/component: logs
+      tier: logging
+    annotations:
+      description: "Application logs storage"
+      backup: "false"
+      retention: "30d"
+    accessModes:
+      - ReadWriteMany  # Multiple pods can write logs
+    storage: 5Gi
+    storageClassName: standard
+
+  # Cache storage - fast ephemeral storage
+  - name: cache-storage
+    labels:
+      app.kubernetes.io/component: cache
+      tier: cache
+    annotations:
+      description: "Application cache storage"
+      backup: "false"
+    accessModes:
+      - ReadWriteOnce
+    storage: 20Gi
+    storageClassName: fast-ssd
+
+  # Database storage - premium storage with high IOPS
+  - name: database-storage
+    labels:
+      app.kubernetes.io/component: database
+      tier: database
+    annotations:
+      description: "Database storage with high IOPS"
+      backup: "true"
+      backup.schedule: "0 2 * * *"
+      backup.retention: "7d"
+    accessModes:
+      - ReadWriteOnce
+    storage: 100Gi
+    storageClassName: premium-ssd
+
+  # Shared media storage - NFS or similar for shared access
+  - name: media-storage
+    labels:
+      app.kubernetes.io/component: media
+      tier: storage
+    annotations:
+      description: "Shared media files storage"
+      backup: "true"
+    accessModes:
+      - ReadWriteMany  # Multiple pods need access
+    storage: 50Gi
+    storageClassName: nfs-storage
+
+# Mount the PVCs in your deployment
+volumes:
+  - name: app-data
+    persistentVolumeClaim:
+      claimName: app-data
+  - name: logs
+    persistentVolumeClaim:
+      claimName: logs-storage
+  - name: cache
+    persistentVolumeClaim:
+      claimName: cache-storage
+  - name: database
+    persistentVolumeClaim:
+      claimName: database-storage
+  - name: media
+    persistentVolumeClaim:
+      claimName: media-storage
+
+volumeMounts:
+  - name: app-data
+    mountPath: /app/data
+  - name: logs
+    mountPath: /app/logs
+  - name: cache
+    mountPath: /app/cache
+  - name: database
+    mountPath: /var/lib/database
+  - name: media
+    mountPath: /app/media
+
+---
+# Example 2: Simple multi-tier application
+# multiplePVCs:
+#   - name: frontend-assets
+#     accessModes:
+#       - ReadWriteMany
+#     storage: 5Gi
+#     storageClassName: standard
+#
+#   - name: backend-data
+#     accessModes:
+#       - ReadWriteOnce
+#     storage: 20Gi
+#     storageClassName: fast-ssd
+#
+#   - name: uploads
+#     accessModes:
+#       - ReadWriteMany
+#     storage: 50Gi
+#     storageClassName: standard
+
+---
+# Example 3: Stateful application with specific PV binding
+# multiplePVCs:
+#   - name: postgres-data
+#     labels:
+#       app.kubernetes.io/component: database
+#     accessModes:
+#       - ReadWriteOnce
+#     storage: 100Gi
+#     storageClassName: premium-ssd
+#     # Bind to specific PV
+#     volumeName: pv-postgres-001
+#
+#   - name: postgres-wal
+#     labels:
+#       app.kubernetes.io/component: database-wal
+#     accessModes:
+#       - ReadWriteOnce
+#     storage: 50Gi
+#     storageClassName: ultra-ssd
+#     # Use selector to match PV labels
+#     selector:
+#       matchLabels:
+#         environment: production
+#         tier: database
+#         type: wal
+
+---
+# Example 4: Block storage for raw device access
+# multiplePVCs:
+#   - name: raw-block-storage
+#     labels:
+#       app.kubernetes.io/component: block-storage
+#     accessModes:
+#       - ReadWriteOnce
+#     storage: 100Gi
+#     storageClassName: block-storage
+#     volumeMode: Block  # Raw block device

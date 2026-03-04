@@ -5,12 +5,12 @@ A comprehensive Helm template for Kubernetes applications with support for multi
 ## Features
 
 - ✅ **Multiple ConfigMaps Support** - Create multiple ConfigMaps with custom names and labels
+- ✅ **Multiple PVCs Support** - Create multiple Persistent Volume Claims with different storage classes
 - ✅ **IngressRoute Support** - Traefik IngressRoute with automatic TLS certificates
 - ✅ **TCP IngressRoute** - Support for TCP services (databases, custom protocols)
 - ✅ **CronJobs** - Scheduled job support
 - ✅ **Autoscaling** - HPA with CPU and memory metrics
 - ✅ **Probes** - Liveness and readiness probes
-- ✅ **PVC Support** - Persistent volume claims
 - ✅ **Service Account** - Custom service accounts with annotations
 - ✅ **Host Aliases** - Custom /etc/hosts entries for pods
 - ✅ **Pod Anti-Affinity** - Spread replicas across nodes/zones
@@ -74,6 +74,47 @@ multipleConfigMaps:
 **Generated ConfigMap Names**: `{release-name}-{config-name}`
 
 Example: Release `myapp` with config `app-config` creates `myapp-app-config`
+
+### Multiple PVCs
+
+Create multiple Persistent Volume Claims with different storage classes and configurations:
+
+```yaml
+multiplePVCs:
+  - name: app-data
+    labels:
+      app.kubernetes.io/component: storage
+    annotations:
+      backup: "true"
+    accessModes:
+      - ReadWriteOnce
+    storage: 10Gi
+    storageClassName: fast-ssd
+
+  - name: logs-storage
+    labels:
+      app.kubernetes.io/component: logs
+    accessModes:
+      - ReadWriteMany
+    storage: 5Gi
+    storageClassName: standard
+
+volumes:
+  - name: app-data
+    persistentVolumeClaim:
+      claimName: app-data
+  - name: logs
+    persistentVolumeClaim:
+      claimName: logs-storage
+
+volumeMounts:
+  - name: app-data
+    mountPath: /app/data
+  - name: logs
+    mountPath: /app/logs
+```
+
+See [MULTIPLE-PVCS.md](MULTIPLE-PVCS.md) for detailed documentation and [examples/multiple-pvcs-values.yaml](examples/multiple-pvcs-values.yaml) for comprehensive examples.
 
 ### IngressRoute (Traefik)
 
@@ -173,6 +214,7 @@ cronJobs:
 ## Documentation
 
 - **[CONFIGMAPS.md](CONFIGMAPS.md)** - Detailed ConfigMaps documentation
+- **[MULTIPLE-PVCS.md](MULTIPLE-PVCS.md)** - Multiple PVCs configuration guide
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide
 - **[INGRESSROUTE.md](INGRESSROUTE.md)** - IngressRoute configuration
 - **[COMPARISON.md](COMPARISON.md)** - Feature comparison

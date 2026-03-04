@@ -2,6 +2,76 @@
 
 This directory contains example configurations for the base Helm template.
 
+## Multiple PVCs Example
+
+The `multiple-pvcs-values.yaml` file demonstrates how to configure multiple Persistent Volume Claims for different storage needs.
+
+### Usage
+
+```bash
+# Deploy with multiple PVCs
+helm install my-app ../base-helm-template -f examples/multiple-pvcs-values.yaml
+```
+
+### Features
+
+- **Multiple storage types**: Configure different storage classes for different needs
+- **Access modes**: Support for ReadWriteOnce, ReadWriteMany, ReadOnlyMany
+- **Labels and annotations**: Add metadata for organization and automation
+- **Volume binding**: Bind to specific PVs or use selectors
+- **Volume modes**: Support for Filesystem and Block storage
+
+### Common Use Cases
+
+#### Application with Multiple Storage Needs
+```yaml
+multiplePVCs:
+  - name: app-data
+    accessModes:
+      - ReadWriteOnce
+    storage: 10Gi
+    storageClassName: fast-ssd
+  
+  - name: logs-storage
+    accessModes:
+      - ReadWriteMany
+    storage: 5Gi
+    storageClassName: standard
+```
+
+#### Database with Separate WAL Storage
+```yaml
+multiplePVCs:
+  - name: postgres-data
+    accessModes:
+      - ReadWriteOnce
+    storage: 100Gi
+    storageClassName: premium-ssd
+  
+  - name: postgres-wal
+    accessModes:
+      - ReadWriteOnce
+    storage: 50Gi
+    storageClassName: ultra-ssd
+```
+
+### Storage Classes
+
+Choose appropriate storage classes based on your needs:
+
+- **fast-ssd / premium-ssd**: High IOPS, low latency (databases, caches)
+- **standard**: Balanced performance and cost (logs, backups)
+- **nfs-storage**: Shared access across multiple pods (media, shared files)
+- **block-storage**: Raw block devices for specialized workloads
+
+### Best Practices
+
+1. **Use appropriate storage classes** for each workload type
+2. **Add labels and annotations** for organization and automation
+3. **Consider access modes** based on your application architecture
+4. **Plan for backups** using annotations to mark critical data
+5. **Monitor storage usage** and adjust sizes as needed
+
 ## Pod Anti-Affinity Example
 
 The `pod-anti-affinity-values.yaml` file demonstrates how to configure pod anti-affinity to spread replicas across different hosts.

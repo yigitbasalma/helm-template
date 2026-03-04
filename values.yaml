@@ -255,12 +255,62 @@ probes: {}
   #     path: /
   #     port: http
 
+# Legacy single PVC (deprecated, use multiplePVCs below)
 pvc: {}
 #  enabled: true
 #  name: data
 #  accessMode: ReadWriteOnce
 #  storage: 5Gi
 #  storageClass: standard
+
+# Multiple PVCs support
+multiplePVCs: []
+  # - name: app-data
+  #   labels:
+  #     app.kubernetes.io/component: storage
+  #   annotations:
+  #     description: "Application data storage"
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   storage: 10Gi
+  #   storageClassName: fast-ssd
+  #
+  # - name: logs-storage
+  #   labels:
+  #     app.kubernetes.io/component: logs
+  #   accessModes:
+  #     - ReadWriteMany
+  #   storage: 5Gi
+  #   storageClassName: standard
+  #
+  # - name: cache-storage
+  #   labels:
+  #     app.kubernetes.io/component: cache
+  #   annotations:
+  #     backup: "false"
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   storage: 20Gi
+  #   storageClassName: fast-ssd
+  #   volumeMode: Filesystem
+  #
+  # - name: database-storage
+  #   labels:
+  #     app.kubernetes.io/component: database
+  #   annotations:
+  #     backup: "true"
+  #     backup.schedule: "0 2 * * *"
+  #   accessModes:
+  #     - ReadWriteOnce
+  #   storage: 100Gi
+  #   storageClassName: premium-ssd
+  #   # Optional: bind to specific PV
+  #   # volumeName: pv-database-001
+  #   # Optional: selector for PV
+  #   # selector:
+  #   #   matchLabels:
+  #   #     environment: production
+  #   #     tier: database
 
 volumes: []
   # - name: logging-config
