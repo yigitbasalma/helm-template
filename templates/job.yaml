@@ -26,7 +26,6 @@ spec:
     metadata:
       labels:
         {{- include "bss.labels" $root | nindent 8 }}
-        job-name: {{ $job.name | default (printf "job-%d" $idx) }}
     spec:
       restartPolicy: {{ default "OnFailure" $job.restartPolicy }}
       {{- if $job.serviceAccountName }}

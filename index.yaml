@@ -3,12 +3,12 @@ entries:
   base-template:
   - apiVersion: v2
     appVersion: "2.5"
-    created: "2026-03-05T01:17:08.316015+03:00"
+    created: "2026-03-05T02:41:58.479063+03:00"
     description: A base Helm chart for Kubernetes
-    digest: 0c5361745a19f90dc90b5f0cd53b52de43b350ca80346620506c395fad412b29
+    digest: 8d683b9055d785d1655dbb39202f73b436a934e9d8e8d1648e17ff113968d310
     name: base-template
     type: application
     urls:
     - https://yigitbasalma.github.io/helm-template/base-template-0.1.0.tgz
     version: 0.1.0
-generated: "2026-03-05T01:17:08.311341+03:00"
+generated: "2026-03-05T02:41:58.47733+03:00"
