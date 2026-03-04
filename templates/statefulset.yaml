@@ -1,11 +1,12 @@
-{{- if eq .Values.workloadType "deployment" }}
+{{- if eq .Values.workloadType "statefulset" }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "bss.fullname" . }}
   labels:
     {{- include "bss.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "bss.fullname" . }}
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
@@ -83,4 +84,41 @@ spec:
       volumes:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+  {{- with .Values.statefulset.volumeClaimTemplates }}
+  volumeClaimTemplates:
+  {{- range . }}
+    - metadata:
+        name: {{ .name }}
+        labels:
+          {{- include "bss.labels" $ | nindent 10 }}
+          {{- with .labels }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+        {{- with .annotations }}
+        annotations:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+      spec:
+        accessModes:
+          {{- range .accessModes }}
+          - {{ . }}
+          {{- end }}
+        resources:
+          requests:
+            storage: {{ .storage }}
+        {{- with .storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        {{- with .selector }}
+        selector:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with .volumeName }}
+        volumeName: {{ . }}
+        {{- end }}
+        {{- with .volumeMode }}
+        volumeMode: {{ . }}
+        {{- end }}
+  {{- end }}
+  {{- end }}
 {{- end }}

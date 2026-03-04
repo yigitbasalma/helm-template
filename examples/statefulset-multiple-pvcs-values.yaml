@@ -1,0 +1,116 @@
+# StatefulSet example with multiple volume claim templates
+# This example shows a StatefulSet with multiple persistent volumes per pod
+
+# Set workload type to statefulset
+workloadType: statefulset
+
+# Number of replicas
+replicaCount: 3
+
+# Image configuration
+image:
+  repository: postgres
+  tag: "14"
+  pullPolicy: IfNotPresent
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+
+# Environment variables
+environments:
+  - name: POSTGRES_PASSWORD
+    value: "changeme"
+  - name: POSTGRES_USER
+    value: "postgres"
+  - name: POSTGRES_DB
+    value: "mydb"
+  - name: PGDATA
+    value: "/var/lib/postgresql/data/pgdata"
+
+# StatefulSet specific configuration with multiple volumes
+statefulset:
+  volumeClaimTemplates:
+    # Main database data volume
+    - name: data
+      labels:
+        app.kubernetes.io/component: database
+      annotations:
+        description: "PostgreSQL data directory"
+        backup: "true"
+      accessModes:
+        - ReadWriteOnce
+      storage: 50Gi
+      storageClassName: fast-ssd
+    
+    # WAL (Write-Ahead Log) volume for better performance
+    - name: wal
+      labels:
+        app.kubernetes.io/component: wal
+      annotations:
+        description: "PostgreSQL WAL directory"
+      accessModes:
+        - ReadWriteOnce
+      storage: 20Gi
+      storageClassName: fast-ssd
+    
+    # Backup volume
+    - name: backup
+      labels:
+        app.kubernetes.io/component: backup
+      annotations:
+        description: "Database backup storage"
+      accessModes:
+        - ReadWriteOnce
+      storage: 100Gi
+      storageClassName: standard
+
+# Volume mounts for the container
+volumeMounts:
+  - name: data
+    mountPath: /var/lib/postgresql/data
+  - name: wal
+    mountPath: /var/lib/postgresql/wal
+  - name: backup
+    mountPath: /backup
+
+# Resources
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "4Gi"
+    cpu: "2000m"
+
+# Probes
+probes:
+  livenessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - pg_isready -U postgres
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - pg_isready -U postgres
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Pod anti-affinity to spread replicas across nodes
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - "{{ include \"base-template.name\" . }}"
+        topologyKey: kubernetes.io/hostname

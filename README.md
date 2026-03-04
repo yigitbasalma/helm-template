@@ -4,8 +4,10 @@ A comprehensive Helm template for Kubernetes applications with support for multi
 
 ## Features
 
+- ✅ **Deployment & StatefulSet Support** - Choose between Deployment or StatefulSet workload types
 - ✅ **Multiple ConfigMaps Support** - Create multiple ConfigMaps with custom names and labels
 - ✅ **Multiple PVCs Support** - Create multiple Persistent Volume Claims with different storage classes
+- ✅ **StatefulSet Volume Claim Templates** - Automatic PVC creation per pod replica
 - ✅ **IngressRoute Support** - Traefik IngressRoute with automatic TLS certificates
 - ✅ **TCP IngressRoute** - Support for TCP services (databases, custom protocols)
 - ✅ **CronJobs** - Scheduled job support
@@ -213,6 +215,7 @@ cronJobs:
 
 ## Documentation
 
+- **[STATEFULSET.md](STATEFULSET.md)** - StatefulSet configuration and examples
 - **[CONFIGMAPS.md](CONFIGMAPS.md)** - Detailed ConfigMaps documentation
 - **[MULTIPLE-PVCS.md](MULTIPLE-PVCS.md)** - Multiple PVCs configuration guide
 - **[QUICKSTART.md](QUICKSTART.md)** - Quick start guide

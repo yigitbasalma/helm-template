@@ -1,0 +1,97 @@
+# StatefulSet example for Redis Cluster
+# This example shows a production-ready Redis cluster configuration
+
+# Set workload type to statefulset
+workloadType: statefulset
+
+# Redis cluster requires at least 6 nodes (3 masters + 3 replicas)
+replicaCount: 6
+
+# Image configuration
+image:
+  repository: redis
+  tag: "7.0"
+  pullPolicy: IfNotPresent
+
+# Command and args for Redis
+command:
+  - redis-server
+args:
+  - --cluster-enabled
+  - "yes"
+  - --cluster-config-file
+  - /data/nodes.conf
+  - --cluster-node-timeout
+  - "5000"
+  - --appendonly
+  - "yes"
+  - --protected-mode
+  - "no"
+  - --dir
+  - /data
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 6379
+
+# StatefulSet specific configuration
+statefulset:
+  volumeClaimTemplates:
+    - name: data
+      labels:
+        app.kubernetes.io/component: storage
+      annotations:
+        description: "Redis data and cluster configuration"
+      accessModes:
+        - ReadWriteOnce
+      storage: 10Gi
+      storageClassName: fast-ssd
+
+# Volume mounts
+volumeMounts:
+  - name: data
+    mountPath: /data
+
+# Resources
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "500m"
+
+# Probes
+probes:
+  livenessProbe:
+    exec:
+      command:
+        - redis-cli
+        - ping
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    exec:
+      command:
+        - redis-cli
+        - ping
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# Pod anti-affinity - spread Redis nodes across different hosts
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - "{{ include \"base-template.name\" . }}"
+        topologyKey: kubernetes.io/hostname
+
+# Pod annotations for monitoring
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "6379"

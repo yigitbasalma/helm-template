@@ -8,6 +8,9 @@ global:
     # Global image tag override - if set, this will be used instead of image.tag
     tag: ""
 
+# Workload type: deployment or statefulset
+workloadType: deployment
+
 replicaCount: 1
 
 image:
@@ -312,6 +315,38 @@ multiplePVCs: []
   #   #     environment: production
   #   #     tier: database
 
+# StatefulSet specific configuration
+statefulset:
+  # Volume claim templates for StatefulSet
+  # These will be automatically created for each pod replica
+  volumeClaimTemplates: []
+    # - name: data
+    #   labels:
+    #     app.kubernetes.io/component: storage
+    #   annotations:
+    #     description: "Pod data storage"
+    #   accessModes:
+    #     - ReadWriteOnce
+    #   storage: 10Gi
+    #   storageClassName: fast-ssd
+    #
+    # - name: logs
+    #   labels:
+    #     app.kubernetes.io/component: logs
+    #   accessModes:
+    #     - ReadWriteOnce
+    #   storage: 5Gi
+    #   storageClassName: standard
+    #
+    # - name: cache
+    #   labels:
+    #     app.kubernetes.io/component: cache
+    #   accessModes:
+    #     - ReadWriteOnce
+    #   storage: 20Gi
+    #   storageClassName: fast-ssd
+    #   volumeMode: Filesystem
+
 volumes: []
   # - name: logging-config
   #   configMap:
@@ -430,6 +465,8 @@ affinity: {}
   #               - m5.xlarge
 
 command: []
+
+args: []
 
 cronJobs: []
 #  - name: cleanup-temp

@@ -1,0 +1,263 @@
+# Complete StatefulSet Example
+# This example demonstrates all StatefulSet features including:
+# - Multiple volume claim templates
+# - Command and args
+# - Multiple ConfigMaps
+# - Shared PVCs alongside per-pod volumes
+# - Pod anti-affinity
+# - Probes and resources
+
+# Set workload type to StatefulSet
+workloadType: statefulset
+
+# Number of replicas
+replicaCount: 3
+
+# Image configuration
+image:
+  repository: postgres
+  tag: "14"
+  pullPolicy: IfNotPresent
+
+# Custom command and args
+command:
+  - docker-entrypoint.sh
+args:
+  - postgres
+  - -c
+  - max_connections=200
+  - -c
+  - shared_buffers=256MB
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5432
+
+# Environment variables
+environments:
+  - name: POSTGRES_PASSWORD
+    value: "changeme"
+  - name: POSTGRES_USER
+    value: "postgres"
+  - name: POSTGRES_DB
+    value: "mydb"
+  - name: PGDATA
+    value: "/var/lib/postgresql/data/pgdata"
+
+# Multiple ConfigMaps for different purposes
+multipleConfigMaps:
+  - name: postgres-config
+    labels:
+      app.kubernetes.io/component: config
+    annotations:
+      description: "PostgreSQL configuration"
+    data:
+      postgresql.conf: |
+        # PostgreSQL configuration
+        listen_addresses = '*'
+        max_connections = 200
+        shared_buffers = 256MB
+        effective_cache_size = 1GB
+        maintenance_work_mem = 64MB
+        checkpoint_completion_target = 0.9
+        wal_buffers = 16MB
+        default_statistics_target = 100
+        random_page_cost = 1.1
+        effective_io_concurrency = 200
+        work_mem = 1310kB
+        min_wal_size = 1GB
+        max_wal_size = 4GB
+      
+      pg_hba.conf: |
+        # PostgreSQL Client Authentication Configuration
+        local   all             all                                     trust
+        host    all             all             127.0.0.1/32            trust
+        host    all             all             ::1/128                 trust
+        host    all             all             0.0.0.0/0               md5
+
+  - name: backup-scripts
+    labels:
+      app.kubernetes.io/component: scripts
+    annotations:
+      description: "Backup and maintenance scripts"
+    data:
+      backup.sh: |
+        #!/bin/bash
+        # Backup script
+        BACKUP_DIR="/backup"
+        TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+        pg_dump -U postgres mydb > "$BACKUP_DIR/backup_$TIMESTAMP.sql"
+        echo "Backup completed: backup_$TIMESTAMP.sql"
+      
+      cleanup.sh: |
+        #!/bin/bash
+        # Cleanup old backups (keep last 7 days)
+        find /backup -name "backup_*.sql" -mtime +7 -delete
+        echo "Cleanup completed"
+
+# Shared PVC for backups (shared across all pods)
+multiplePVCs:
+  - name: shared-backup
+    labels:
+      app.kubernetes.io/component: backup
+    annotations:
+      backup: "true"
+      description: "Shared backup storage"
+    accessModes:
+      - ReadWriteMany
+    storage: 100Gi
+    storageClassName: nfs
+
+# StatefulSet volume claim templates (per-pod volumes)
+statefulset:
+  volumeClaimTemplates:
+    # Main database data volume
+    - name: data
+      labels:
+        app.kubernetes.io/component: database
+      annotations:
+        description: "PostgreSQL data directory"
+        backup: "true"
+      accessModes:
+        - ReadWriteOnce
+      storage: 50Gi
+      storageClassName: fast-ssd
+    
+    # WAL (Write-Ahead Log) volume
+    - name: wal
+      labels:
+        app.kubernetes.io/component: wal
+      annotations:
+        description: "PostgreSQL WAL directory"
+      accessModes:
+        - ReadWriteOnce
+      storage: 20Gi
+      storageClassName: fast-ssd
+    
+    # Per-pod logs
+    - name: logs
+      labels:
+        app.kubernetes.io/component: logs
+      annotations:
+        description: "PostgreSQL logs"
+      accessModes:
+        - ReadWriteOnce
+      storage: 10Gi
+      storageClassName: standard
+
+# Volumes configuration
+volumes:
+  # Mount shared backup PVC
+  - name: shared-backup
+    persistentVolumeClaim:
+      claimName: shared-backup
+  
+  # Mount ConfigMaps
+  - name: postgres-config
+    configMap:
+      name: "{{ include \"bss.fullname\" . }}-postgres-config"
+  
+  - name: backup-scripts
+    configMap:
+      name: "{{ include \"bss.fullname\" . }}-backup-scripts"
+      defaultMode: 0755  # Make scripts executable
+
+# Volume mounts
+volumeMounts:
+  # Per-pod volumes (from volumeClaimTemplates)
+  - name: data
+    mountPath: /var/lib/postgresql/data
+  - name: wal
+    mountPath: /var/lib/postgresql/wal
+  - name: logs
+    mountPath: /var/log/postgresql
+  
+  # Shared volumes
+  - name: shared-backup
+    mountPath: /backup
+  
+  # ConfigMap mounts
+  - name: postgres-config
+    mountPath: /etc/postgresql/postgresql.conf
+    subPath: postgresql.conf
+  - name: postgres-config
+    mountPath: /etc/postgresql/pg_hba.conf
+    subPath: pg_hba.conf
+  - name: backup-scripts
+    mountPath: /scripts
+
+# Resources
+resources:
+  requests:
+    memory: "2Gi"
+    cpu: "1000m"
+  limits:
+    memory: "4Gi"
+    cpu: "2000m"
+
+# Probes
+probes:
+  livenessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - pg_isready -U postgres
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    exec:
+      command:
+        - /bin/sh
+        - -c
+        - pg_isready -U postgres
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Pod anti-affinity - spread replicas across different hosts
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+                - "{{ include \"base-template.name\" . }}"
+        topologyKey: kubernetes.io/hostname
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9187"
+  backup.schedule: "0 2 * * *"
+
+# Security context
+podSecurityContext:
+  fsGroup: 999
+  runAsUser: 999
+  runAsNonRoot: true
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: false
+
+# Node selector (optional)
+nodeSelector:
+  workload-type: database
+
+# Tolerations (optional)
+tolerations:
+  - key: "database"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"

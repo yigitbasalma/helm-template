@@ -1,0 +1,61 @@
+# Basic StatefulSet example with single volume claim template
+# This example shows a simple StatefulSet with persistent storage
+
+# Set workload type to statefulset
+workloadType: statefulset
+
+# Number of replicas
+replicaCount: 3
+
+# Image configuration
+image:
+  repository: nginx
+  tag: "1.21"
+  pullPolicy: IfNotPresent
+
+# Service configuration - StatefulSet requires a headless service
+service:
+  type: ClusterIP
+  port: 80
+
+# StatefulSet specific configuration
+statefulset:
+  # Volume claim templates - these will be created for each pod
+  volumeClaimTemplates:
+    - name: data
+      labels:
+        app.kubernetes.io/component: storage
+      annotations:
+        description: "Pod data storage"
+      accessModes:
+        - ReadWriteOnce
+      storage: 10Gi
+      storageClassName: standard
+
+# Volume mounts for the container
+volumeMounts:
+  - name: data
+    mountPath: /usr/share/nginx/html
+
+# Resources
+resources:
+  requests:
+    memory: "128Mi"
+    cpu: "100m"
+  limits:
+    memory: "256Mi"
+    cpu: "200m"
+
+# Pod anti-affinity to spread replicas across nodes
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - "{{ include \"base-template.name\" . }}"
+          topologyKey: kubernetes.io/hostname

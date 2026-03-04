@@ -84,3 +84,34 @@ spec:
     {{- include "bss.selectorLabels" . | nindent 4 }}
   {{- end }}
 {{- end }}
+
+{{- if eq .Values.workloadType "statefulset" }}
+---
+# Headless service for StatefulSet
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bss.fullname" . }}-headless
+  labels:
+    {{- include "bss.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  {{- if .Values.service.ports }}
+  ports:
+    {{- range .Values.service.ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort | default .port }}
+      protocol: {{ .protocol | default "TCP" }}
+      name: {{ .name | default "http" }}
+    {{- end }}
+  {{- else }}
+  ports:
+    - port: {{ .Values.service.port | default 80 }}
+      targetPort: {{ .Values.service.targetPort | default "http" }}
+      protocol: TCP
+      name: http
+  {{- end }}
+  selector:
+    {{- include "bss.selectorLabels" . | nindent 4 }}
+{{- end }}
+

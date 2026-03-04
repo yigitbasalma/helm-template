@@ -2,6 +2,69 @@
 
 This directory contains example configurations for the base Helm template.
 
+## StatefulSet Examples
+
+### Quick Start
+See [statefulset-quickstart.md](statefulset-quickstart.md) for a quick start guide.
+
+### Basic StatefulSet (`statefulset-basic-values.yaml`)
+Simple nginx StatefulSet with single volume claim template.
+
+```bash
+helm install my-app . -f examples/statefulset-basic-values.yaml
+```
+
+Features:
+- Single volume claim template for data storage
+- 3 replicas with pod anti-affinity
+- Basic nginx configuration
+
+### Database with Multiple Volumes (`statefulset-multiple-pvcs-values.yaml`)
+PostgreSQL database with separate data, WAL, and backup volumes.
+
+```bash
+helm install postgres . -f examples/statefulset-multiple-pvcs-values.yaml
+```
+
+Features:
+- Three volume claim templates (data, WAL, backup)
+- PostgreSQL-specific configuration
+- Health probes for database
+- Resource limits and requests
+
+### Redis Cluster (`statefulset-redis-cluster-values.yaml`)
+Production-ready Redis cluster configuration.
+
+```bash
+helm install redis . -f examples/statefulset-redis-cluster-values.yaml
+```
+
+Features:
+- Redis cluster mode enabled
+- Command and args for Redis configuration
+- Persistent storage for cluster data
+- Pod anti-affinity for high availability
+- Prometheus monitoring annotations
+
+### Complete Example (`complete-statefulset-example.yaml`)
+Comprehensive example showing all StatefulSet features.
+
+```bash
+helm install complete . -f examples/complete-statefulset-example.yaml
+```
+
+Features:
+- Multiple volume claim templates (per-pod volumes)
+- Multiple ConfigMaps for configuration and scripts
+- Shared PVC for backups (across all pods)
+- Command and args customization
+- Pod anti-affinity
+- Security contexts
+- Node selectors and tolerations
+- Comprehensive probes
+
+See [STATEFULSET.md](../STATEFULSET.md) for detailed documentation.
+
 ## Multiple PVCs Example
 
 The `multiple-pvcs-values.yaml` file demonstrates how to configure multiple Persistent Volume Claims for different storage needs.
