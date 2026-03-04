@@ -495,6 +495,43 @@ cronJobs: []
 #        cpu: "50m"
 #        memory: "64Mi"
 
+jobs: []
+#  - name: database-migration
+#    image: "myapp/migrations:latest"
+#    imagePullPolicy: IfNotPresent
+#    command: ["/bin/sh", "-c"]
+#    args:
+#      - "echo 'Running migrations'; ./migrate.sh"
+#    env:
+#      DATABASE_URL: "postgresql://db:5432/mydb"
+#      MIGRATION_ENV: "production"
+#    serviceAccountName: "migration-sa"
+#    backoffLimit: 3
+#    restartPolicy: OnFailure
+#    activeDeadlineSeconds: 600
+#    ttlSecondsAfterFinished: 86400
+#    resources:
+#      limits:
+#        cpu: "500m"
+#        memory: "512Mi"
+#      requests:
+#        cpu: "250m"
+#        memory: "256Mi"
+#    volumeMounts:
+#      - name: migration-scripts
+#        mountPath: /scripts
+#    volumes:
+#      - name: migration-scripts
+#        configMap:
+#          name: migration-scripts
+#    nodeSelector:
+#      workload: batch
+#    tolerations:
+#      - key: "batch"
+#        operator: "Equal"
+#        value: "true"
+#        effect: "NoSchedule"
+
 ingressRoute:
   enabled: false
   host: chart-example.local

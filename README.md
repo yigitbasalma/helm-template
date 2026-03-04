@@ -11,6 +11,7 @@ A comprehensive Helm template for Kubernetes applications with support for multi
 - ✅ **IngressRoute Support** - Traefik IngressRoute with automatic TLS certificates
 - ✅ **TCP IngressRoute** - Support for TCP services (databases, custom protocols)
 - ✅ **CronJobs** - Scheduled job support
+- ✅ **Jobs** - One-time task execution support
 - ✅ **Autoscaling** - HPA with CPU and memory metrics
 - ✅ **Probes** - Liveness and readiness probes
 - ✅ **Service Account** - Custom service accounts with annotations
@@ -213,8 +214,45 @@ cronJobs:
         memory: "128Mi"
 ```
 
+### Jobs
+
+Run one-time tasks to completion:
+
+```yaml
+jobs:
+  - name: database-migration
+    image: "myapp/migrations:1.0.0"
+    command: ["/bin/sh", "-c"]
+    args:
+      - "./migrate.sh up"
+    env:
+      DATABASE_URL: "postgresql://postgres:5432/mydb"
+    backoffLimit: 3
+    restartPolicy: OnFailure
+    activeDeadlineSeconds: 600
+    ttlSecondsAfterFinished: 86400
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+```
+
+**Key Parameters:**
+- `backoffLimit`: Number of retries before marking job as failed (default: 6)
+- `activeDeadlineSeconds`: Maximum time job can run before termination
+- `ttlSecondsAfterFinished`: Automatic cleanup after completion
+- `restartPolicy`: OnFailure or Never
+
+See [examples/jobs-values.yaml](examples/jobs-values.yaml) for comprehensive examples including:
+- Database migrations
+- Data imports
+- Backup jobs
+- Initialization tasks
+- Cleanup operations
+
 ## Documentation
 
+- **[JOBS.md](JOBS.md)** - Jobs configuration and examples
 - **[STATEFULSET.md](STATEFULSET.md)** - StatefulSet configuration and examples
 - **[CONFIGMAPS.md](CONFIGMAPS.md)** - Detailed ConfigMaps documentation
 - **[MULTIPLE-PVCS.md](MULTIPLE-PVCS.md)** - Multiple PVCs configuration guide

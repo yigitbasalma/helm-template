@@ -1,0 +1,10 @@
+# Simple Job Example
+# Minimal configuration for a one-time task
+
+jobs:
+  - name: hello-world
+    image: "busybox:1.36"
+    command: ["echo"]
+    args: ["Hello from Kubernetes Job!"]
+    restartPolicy: Never
+    ttlSecondsAfterFinished: 300  # Clean up after 5 minutes

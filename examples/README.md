@@ -2,6 +2,32 @@
 
 This directory contains example configurations for the base Helm template.
 
+## Jobs Examples
+
+### Jobs Configuration (`jobs-values.yaml`)
+Comprehensive examples of Kubernetes Jobs for one-time tasks.
+
+```bash
+helm install my-jobs . -f examples/jobs-values.yaml
+```
+
+Features:
+- Database migration jobs
+- Data import/export jobs
+- Backup operations
+- Initialization tasks
+- Cleanup jobs with node affinity
+- Simple notification jobs
+
+Use cases:
+- Run database migrations before deployment
+- Import initial data
+- Perform one-time setup tasks
+- Execute batch processing
+- Administrative operations
+
+See [../JOBS.md](../JOBS.md) for detailed documentation.
+
 ## StatefulSet Examples
 
 ### Quick Start

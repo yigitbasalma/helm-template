@@ -1,0 +1,196 @@
+# Example values for Kubernetes Jobs
+# Jobs are one-time tasks that run to completion
+
+# Example 1: Database Migration Job
+jobs:
+  - name: database-migration
+    image: "myapp/migrations:1.0.0"
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        echo "Starting database migration..."
+        ./migrate.sh up
+        echo "Migration completed successfully"
+    env:
+      DATABASE_URL: "postgresql://postgres:5432/mydb"
+      MIGRATION_ENV: "production"
+    serviceAccountName: "migration-sa"
+    backoffLimit: 3
+    restartPolicy: OnFailure
+    activeDeadlineSeconds: 600  # 10 minutes timeout
+    ttlSecondsAfterFinished: 86400  # Clean up after 24 hours
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+    volumeMounts:
+      - name: migration-scripts
+        mountPath: /scripts
+    volumes:
+      - name: migration-scripts
+        configMap:
+          name: migration-scripts
+
+  # Example 2: Data Import Job
+  - name: data-import
+    image: "busybox:1.36"
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh"]
+    args:
+      - "-c"
+      - "echo 'Importing data...'; sleep 10; echo 'Import complete'"
+    env:
+      - name: IMPORT_SOURCE
+        value: "s3://mybucket/data.csv"
+      - name: IMPORT_TARGET
+        value: "postgresql://db:5432/mydb"
+    backoffLimit: 5
+    restartPolicy: Never
+    ttlSecondsAfterFinished: 3600  # Clean up after 1 hour
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "1Gi"
+      requests:
+        cpu: "500m"
+        memory: "512Mi"
+
+  # Example 3: Backup Job
+  - name: backup-database
+    image: "postgres:15-alpine"
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c"]
+    args:
+      - |
+        pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME > /backup/backup-$(date +%Y%m%d-%H%M%S).sql
+        echo "Backup completed"
+    env:
+      DB_HOST: "postgres-service"
+      DB_USER: "postgres"
+      DB_NAME: "production"
+    serviceAccountName: "backup-sa"
+    backoffLimit: 2
+    restartPolicy: OnFailure
+    activeDeadlineSeconds: 1800  # 30 minutes timeout
+    ttlSecondsAfterFinished: 172800  # Clean up after 48 hours
+    resources:
+      limits:
+        cpu: "1000m"
+        memory: "2Gi"
+      requests:
+        cpu: "500m"
+        memory: "1Gi"
+    volumeMounts:
+      - name: backup-storage
+        mountPath: /backup
+    volumes:
+      - name: backup-storage
+        persistentVolumeClaim:
+          claimName: backup-pvc
+    nodeSelector:
+      workload: batch
+
+  # Example 4: Initialization Job
+  - name: app-init
+    image: "myapp/init:latest"
+    imagePullPolicy: Always
+    command: ["/app/init.sh"]
+    args:
+      - "--setup-database"
+      - "--create-admin-user"
+      - "--load-fixtures"
+    env:
+      - name: APP_ENV
+        value: "production"
+      - name: ADMIN_EMAIL
+        valueFrom:
+          secretKeyRef:
+            name: admin-credentials
+            key: email
+      - name: ADMIN_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: admin-credentials
+            key: password
+    backoffLimit: 1
+    restartPolicy: Never
+    activeDeadlineSeconds: 300  # 5 minutes timeout
+    ttlSecondsAfterFinished: 600  # Clean up after 10 minutes
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"
+      requests:
+        cpu: "250m"
+        memory: "256Mi"
+
+  # Example 5: Cleanup Job with Node Affinity
+  - name: cleanup-old-files
+    image: "alpine:3.19"
+    imagePullPolicy: IfNotPresent
+    command: ["/bin/sh", "-c"]
+    args:
+      - "find /data -type f -mtime +30 -delete && echo 'Cleanup completed'"
+    backoffLimit: 3
+    restartPolicy: OnFailure
+    ttlSecondsAfterFinished: 3600
+    resources:
+      limits:
+        cpu: "200m"
+        memory: "128Mi"
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+    volumeMounts:
+      - name: data-volume
+        mountPath: /data
+    volumes:
+      - name: data-volume
+        persistentVolumeClaim:
+          claimName: app-data-pvc
+    nodeSelector:
+      node-role.kubernetes.io/worker: ""
+    tolerations:
+      - key: "maintenance"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+    affinity:
+      nodeAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+                - key: workload-type
+                  operator: In
+                  values:
+                    - batch
+                    - maintenance
+
+  # Example 6: Simple One-off Task
+  - name: send-notification
+    image: "curlimages/curl:8.5.0"
+    imagePullPolicy: IfNotPresent
+    command: ["curl"]
+    args:
+      - "-X"
+      - "POST"
+      - "https://api.example.com/notify"
+      - "-H"
+      - "Content-Type: application/json"
+      - "-d"
+      - '{"message":"Deployment completed"}'
+    backoffLimit: 5
+    restartPolicy: OnFailure
+    ttlSecondsAfterFinished: 300  # Clean up after 5 minutes
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "64Mi"
+      requests:
+        cpu: "50m"
+        memory: "32Mi"
