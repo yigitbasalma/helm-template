@@ -63,3 +63,21 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Build env list from both environments (list) and environmentsMap (map).
+environmentsMap is merged properly by Helm across multiple values files,
+making it ideal for per-environment overrides.
+*/}}
+{{- define "bss.env" -}}
+{{- if or .Values.environments .Values.environmentsMap }}
+env:
+  {{- with .Values.environments }}
+  {{- toYaml . | nindent 2 }}
+  {{- end }}
+  {{- range $key, $val := .Values.environmentsMap }}
+  - name: {{ $key }}
+    value: {{ $val | quote }}
+  {{- end }}
+{{- end }}
+{{- end }}

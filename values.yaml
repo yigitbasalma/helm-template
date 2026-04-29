@@ -52,6 +52,28 @@ environments: []
   # - name: ENV
   #   value: production
 
+# Map-based environment variables (recommended for multi-environment setups)
+# Unlike 'environments' (list), this is a map and merges correctly across
+# multiple values files. Use this for variables that change per environment.
+#
+# Usage:
+#   helm install myapp . -f values.yaml -f values-prod.yaml
+#
+# values.yaml (base):
+#   environmentsMap:
+#     DATABASE_HOST: "db.default.svc"
+#     LOG_LEVEL: "info"
+#
+# values-prod.yaml (only overrides):
+#   environmentsMap:
+#     DATABASE_HOST: "db-prod.internal"
+#
+# Result: DATABASE_HOST=db-prod.internal, LOG_LEVEL=info
+environmentsMap: {}
+  # DATABASE_HOST: "db.default.svc"
+  # DATABASE_PORT: "5432"
+  # LOG_LEVEL: "info"
+
 environmentsFrom: []
   # - configMapRef:
   #     name: app-config-map

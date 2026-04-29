@@ -1,0 +1,20 @@
+# Production ortamı — sadece farklı olan key'ler
+# Kullanım: helm install myapp . -f values.yaml -f values-prod.yaml
+
+replicaCount: 4
+
+resources:
+  requests:
+    memory: "512Mi"
+    cpu: "250m"
+  limits:
+    memory: "1Gi"
+    cpu: "1000m"
+
+environmentsMap:
+  DATABASE_HOST: "db-prod.internal"
+  DATABASE_POOL_SIZE: "50"
+  LOG_LEVEL: "warn"
+  APP_ENV: "production"
+  CORS_ORIGINS: "https://mycompany.com"
+  RATE_LIMIT: "1000"

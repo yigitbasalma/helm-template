@@ -53,10 +53,7 @@ spec:
           {{- with .Values.probes }}
           {{- toYaml . | nindent 10 }}
           {{- end }}
-          {{- with .Values.environments }}
-          env:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+          {{- include "bss.env" . | nindent 10 }}
           {{- with .Values.environmentsFrom }}
           envFrom:
             {{- toYaml . | nindent 12 }}
